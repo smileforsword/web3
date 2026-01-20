@@ -27,7 +27,8 @@
       "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: blood8 Web3 betting room system\n\n- Smart contracts: Factory and MinimalRoom with EIP-712 signatures\n- Backend: Express API with signature service and event listener\n- Frontend: Vue 3 application with wallet integration\n- Documentation: Deployment guides and implementation notes\n- Target: BSC Testnet \\(chainId: 97\\)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(git remote add:*)",
       "Bash(git push:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nUpdate documentation: BSC Testnet → opBNB Testnet\n\n- Updated network from BSC Testnet \\(97\\) to opBNB Testnet \\(5611\\)\n- Updated Factory address: 0x2c4d36e6fEBC8a8F2b546fa6080f10117af44861\n- Updated Token \\(BLD8\\) address: 0x9Aaf5A530835dE34698495BB01950AC7ce780E2c\n- Updated RPC endpoints and explorer URLs\n- Added opBNB Layer 2 context and benefits\n\nFiles updated:\n- CLAUDE.md: Project overview and EIP-712 configuration\n- README.md: Integration guide with new addresses\n- PROJECT_README.md: Quick start documentation\n- backend/.env.example: Environment variable template\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }

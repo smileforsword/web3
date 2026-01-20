@@ -1,8 +1,12 @@
 {
   "name": "frontend",
   "version": "1.0.0",
-  "description": "",
+  "description": "Blood8 Frontend - Node.js 16.20+ compatible",
   "main": "index.js",
+  "engines": {
+    "node": ">=16.20.0",
+    "npm": ">=8.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -14,12 +18,12 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
-    "ethers": "^6.16.0",
-    "vue": "^3.5.26",
-    "vue-router": "^4.6.4"
+    "ethers": "^6.9.2",
+    "vue": "^3.3.11",
+    "vue-router": "^4.2.5"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^5.2.4",
-    "vite": "^5.4.21"
+    "@vitejs/plugin-vue": "^4.5.2",
+    "vite": "^4.5.2"
   }
 }
