@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**blood8** is a Web3 betting room system built on BSC Testnet that uses EIP-712 signatures for secure, backend-authorized transactions. The system consists of:
+**blood8** is a Web3 betting room system built on opBNB Testnet that uses EIP-712 signatures for secure, backend-authorized transactions. The system consists of:
 
-- **Factory Contract** (`0x5da0A10bc48fA54Bd97486a7BB314C81f85fDF17`): Creates new betting rooms
+- **Factory Contract** (`0x2c4d36e6fEBC8a8F2b546fa6080f10117af44861`): Creates new betting rooms
 - **Room Contracts**: Individual betting rooms with EIP-712-protected operations
-- **ERC20 Token** (`0xA4A269d7D20BBCaE87d21942DeC0b399AC5fED56`): Payment token for bets
+- **ERC20 Token (BLD8)** (`0x9Aaf5A530835dE34698495BB01950AC7ce780E2c`): Payment token for bets
 
-**Target Network**: BSC Testnet (chainId: 97)
+**Target Network**: opBNB Testnet (chainId: 5611)
 
 ## Architecture
 
@@ -47,7 +47,7 @@ The core security model relies on backend-controlled signatures:
 {
   name: "blood8-room",
   version: "1",
-  chainId: 97,
+  chainId: 5611,  // opBNB Testnet
   verifyingContract: roomAddress  // specific to each room
 }
 
@@ -96,9 +96,9 @@ npm test                   # Run tests
 
 Environment variables needed:
 - `WEB_AUTH_PRIVATE_KEY`: The authorized signer private key (critical - server-only)
-- `BSC_TESTNET_RPC`: RPC endpoint for BSC Testnet
-- `FACTORY_ADDRESS`: `0x5da0A10bc48fA54Bd97486a7BB314C81f85fDF17`
-- `TOKEN_ADDRESS`: `0xA4A269d7D20BBCaE87d21942DeC0b399AC5fED56`
+- `OPBNB_TESTNET_RPC`: RPC endpoint for opBNB Testnet (https://opbnb-testnet-rpc.bnbchain.org)
+- `FACTORY_ADDRESS`: `0x2c4d36e6fEBC8a8F2b546fa6080f10117af44861`
+- `TOKEN_ADDRESS`: `0x9Aaf5A530835dE34698495BB01950AC7ce780E2c`
 
 ## Critical Implementation Notes
 

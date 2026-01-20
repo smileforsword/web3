@@ -1,4 +1,4 @@
-# blood8 集成资料包（BSC Testnet）— 面向无 Web3 经验团队
+# blood8 集成资料包（opBNB Testnet）— 面向无 Web3 经验团队
 
 > 前端与后端外包团队的一次性对接文档：包含网络/地址、最小 ABI、端到端流程、EIP-712 签名规范、术语解释、常见错误与安全清单。
 > 所有示例默认使用 **ethers v6**。
@@ -7,9 +7,9 @@
 
 ## 0）基础信息（必须）
 
-* **网络**：BSC Testnet（`chainId = 97`）
-* **工厂合约地址**：`0x5da0A10bc48fA54Bd97486a7BB314C81f85fDF17`
-* **ERC20 代币地址**：`0xA4A269d7D20BBCaE87d21942DeC0b399AC5fED56`
+* **网络**：opBNB Testnet（`chainId = 5611`）
+* **工厂合约地址**：`0x2c4d36e6fEBC8a8F2b546fa6080f10117af44861`
+* **ERC20 代币地址（BLD8）**：`0x9Aaf5A530835dE34698495BB01950AC7ce780E2c`
 * **授权签名者（后端持有私钥，用于 EIP-712）**：`<后端签名者地址>`
   说明：房间创建时把该地址写入房间合约；**签名私钥只保存在后端**（.env 或密钥管理服务），前端绝不接触。
 
@@ -17,13 +17,13 @@
 
 ## 1）名词速查（给非 Web3 团队的简明解释）
 
-* **区块链 / BSC**：去中心化的计算网络，可执行智能合约。BSC 是与以太坊兼容的链。
+* **区块链 / opBNB**：去中心化的计算网络，可执行智能合约。opBNB 是 BNB Chain 的 Layer 2 解决方案，完全兼容以太坊，gas费更低。
 * **Testnet / Mainnet**：测试网（无真实价值，用测试币）；主网（真实价值）。
-* **RPC / Provider**：应用连接区块链的“网关”。RPC 是接口地址；Provider 是代码里封装的连接对象（HTTP/WSS）。
+* **RPC / Provider**：应用连接区块链的"网关"。RPC 是接口地址；Provider 是代码里封装的连接对象（HTTP/WSS）。
 * **钱包 / EOA**：由私钥控制的账户地址（0x…），可发交易与签名。
-* **私钥**：控制钱包的“根钥匙”，丢失或泄露无法挽回。后端的签名私钥仅存服务器。
-* **合约 / ABI**：合约是部署在链上的程序；ABI 是函数/事件的“说明书”（JSON），前端/后端用它与合约交互。
-* **Gas / tBNB**：上链交易费用（gas），在 BSC 测试网用 tBNB 支付。
+* **私钥**：控制钱包的"根钥匙"，丢失或泄露无法挽回。后端的签名私钥仅存服务器。
+* **合约 / ABI**：合约是部署在链上的程序；ABI 是函数/事件的"说明书"（JSON），前端/后端用它与合约交互。
+* **Gas / tBNB**：上链交易费用（gas），在 opBNB 测试网用 tBNB 支付。
 * **ERC20 / approve / allowance / transferFrom**：
   标准代币协议。用户先 `approve(房间地址, 金额)` 授权额度；合约内部通过 `transferFrom(user→room)` 扣款。
 * **事件（Event/Log）**：合约发出的链上日志，用于后端监听与前端展示。
@@ -39,7 +39,7 @@
 
 ### A. 创建房间（前端）
 
-1. 连接钱包（BSC Testnet）。
+1. 连接钱包（opBNB Testnet，chainId: 5611）。
 2. 调用工厂合约 `createRoom(token, authorizedSigner, creator)`：
 
    * `token` = 上述 ERC20 地址
@@ -168,7 +168,7 @@
 const domain = {
   name: "blood8-room",
   version: "1",
-  chainId: 97,                 // BSC Testnet
+  chainId: 5611,  // opBNB Testnet                 // BSC Testnet
   verifyingContract: roomAddress
 };
 ```

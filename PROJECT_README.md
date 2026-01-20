@@ -1,6 +1,6 @@
 # Blood8 Web3 Betting Room System
 
-完整的 Web3 下注房间系统，基于 BSC Testnet，使用 EIP-712 签名验证。
+完整的 Web3 下注房间系统，基于 opBNB Testnet，使用 EIP-712 签名验证。
 
 ## 项目结构
 
