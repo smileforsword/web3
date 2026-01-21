@@ -6,7 +6,11 @@
  */
 
 export const networks = {
-  // opBNB 测试网
+  // ==========================================
+  // 📌 测试网配置（当前使用）
+  // ==========================================
+
+  // opBNB 测试网 - 使用自定义 BLD8 代币
   'opbnb-testnet': {
     name: 'opBNB Testnet',
     chainId: 5611,
@@ -19,7 +23,7 @@ export const networks = {
       decimals: 18
     },
     tokens: {
-      BLD8: {
+      BLD8: {  // 测试代币（可免费mint）
         address: '0x9Aaf5A530835dE34698495BB01950AC7ce780E2c',
         decimals: 18,
         symbol: 'BLD8',
@@ -30,7 +34,7 @@ export const networks = {
     defaultToken: 'BLD8'
   },
 
-  // BSC 测试网
+  // BSC 测试网（备用）
   'bsc-testnet': {
     name: 'BSC Testnet',
     chainId: 97,
@@ -54,7 +58,17 @@ export const networks = {
     defaultToken: 'USDT'
   },
 
-  // opBNB 主网
+  // ==========================================
+  // 🚀 主网配置（生产环境使用）
+  // TODO: 上主网时需要修改的步骤：
+  // 1. 部署 Factory 合约到主网
+  // 2. 将 factory 地址替换为实际部署的地址
+  // 3. USDT 地址已经是正确的主网地址，无需修改
+  // 4. 更新 .env 文件：VITE_NETWORK=opbnb-mainnet
+  // 5. 重新构建前端：npm run build
+  // ==========================================
+
+  // opBNB 主网 - 使用真实 USDT
   'opbnb-mainnet': {
     name: 'opBNB Mainnet',
     chainId: 204,
@@ -68,17 +82,20 @@ export const networks = {
     },
     tokens: {
       USDT: {
+        // ✅ opBNB 主网官方 USDT 地址（已验证）
         address: '0x9e5AAC1Ba1a2e6aEd6b32689DFcF62A509Ca96f3',
-        decimals: 18,
+        decimals: 18,  // ⚠️ 注意：opBNB 上的 USDT 是 18 位小数！
         symbol: 'USDT',
         name: 'Tether USD'
       }
     },
-    factory: import.meta.env.VITE_OPBNB_MAINNET_FACTORY || '0x...',
+    // 🔴 TODO: 主网上线前必须修改！
+    // 步骤：部署 Factory 到 opBNB 主网后，替换此地址
+    factory: import.meta.env.VITE_OPBNB_MAINNET_FACTORY || '0x...',  // 需要部署后填写
     defaultToken: 'USDT'
   },
 
-  // BSC 主网
+  // BSC 主网（备用方案）
   'bsc-mainnet': {
     name: 'BSC Mainnet',
     chainId: 56,
@@ -92,13 +109,15 @@ export const networks = {
     },
     tokens: {
       USDT: {
+        // ✅ BSC 主网官方 USDT 地址（已验证）
         address: '0x55d398326f99059fF775485246999027B3197955',
-        decimals: 18,
+        decimals: 18,  // ⚠️ 注意：BSC 上的 USDT 也是 18 位小数！
         symbol: 'USDT',
         name: 'Tether USD'
       }
     },
-    factory: import.meta.env.VITE_BSC_MAINNET_FACTORY || '0x...',
+    // 🔴 TODO: 主网上线前必须修改！
+    factory: import.meta.env.VITE_BSC_MAINNET_FACTORY || '0x...',  // 需要部署后填写
     defaultToken: 'USDT'
   }
 };

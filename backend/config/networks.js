@@ -7,40 +7,36 @@
  */
 
 const networks = {
-  // opBNB 测试网
+  // ==========================================
+  // 📌 测试网配置（当前使用）
+  // ==========================================
+
+  // opBNB 测试网 - 使用自定义 BLD8 代币
   'opbnb-testnet': {
     name: 'opBNB Testnet',
     chainId: 5611,
     rpcUrl: 'https://opbnb-testnet-rpc.bnbchain.org',
     explorer: 'https://opbnb-testnet.bscscan.com',
     tokens: {
-      // 自定义测试代币（已部署）
+      // 自定义测试代币（可免费mint）
       BLD8: {
         address: '0x9Aaf5A530835dE34698495BB01950AC7ce780E2c',
         decimals: 18,
         symbol: 'BLD8',
         name: 'Blood8 Token'
       },
-      // 如果需要，可以部署测试USDT
-      // USDT: {
-      //   address: '0x...', // 部署后填写
-      //   decimals: 6,
-      //   symbol: 'USDT',
-      //   name: 'Test USDT'
-      // }
     },
     factory: '0x2c4d36e6fEBC8a8F2b546fa6080f10117af44861',
     defaultToken: 'BLD8'
   },
 
-  // BSC 测试网
+  // BSC 测试网（备用）
   'bsc-testnet': {
     name: 'BSC Testnet',
     chainId: 97,
     rpcUrl: 'https://data-seed-prebsc-1-s1.binance.org:8545',
     explorer: 'https://testnet.bscscan.com',
     tokens: {
-      // BSC测试网USDT（需要部署或使用官方测试币）
       USDT: {
         address: process.env.BSC_TESTNET_USDT || '0x...', // 需要部署
         decimals: 6,
@@ -52,7 +48,17 @@ const networks = {
     defaultToken: 'USDT'
   },
 
-  // opBNB 主网
+  // ==========================================
+  // 🚀 主网配置（生产环境使用）
+  // TODO: 上主网时需要修改的步骤：
+  // 1. 部署 Factory 合约到主网
+  // 2. 将 factory 地址替换为实际部署的地址
+  // 3. USDT 地址已经是正确的主网地址，无需修改
+  // 4. 更新 .env 文件：NETWORK=opbnb-mainnet
+  // 5. 重启后端服务：pm2 restart blood8-backend
+  // ==========================================
+
+  // opBNB 主网 - 使用真实 USDT
   'opbnb-mainnet': {
     name: 'opBNB Mainnet',
     chainId: 204,
@@ -60,17 +66,20 @@ const networks = {
     explorer: 'https://opbnbscan.com',
     tokens: {
       USDT: {
-        address: '0x9e5AAC1Ba1a2e6aEd6b32689DFcF62A509Ca96f3', // opBNB主网USDT
-        decimals: 18, // opBNB上的USDT是18位小数
+        // ✅ opBNB 主网官方 USDT 地址（已验证）
+        address: '0x9e5AAC1Ba1a2e6aEd6b32689DFcF62A509Ca96f3',
+        decimals: 18, // ⚠️ 注意：opBNB 上的 USDT 是 18 位小数！
         symbol: 'USDT',
         name: 'Tether USD'
       }
     },
-    factory: process.env.OPBNB_MAINNET_FACTORY || '0x...', // 生产环境需要部署
+    // 🔴 TODO: 主网上线前必须修改！
+    // 步骤：部署 Factory 到 opBNB 主网后，填写到 .env 的 OPBNB_MAINNET_FACTORY
+    factory: process.env.OPBNB_MAINNET_FACTORY || '0x...', // 需要部署后填写
     defaultToken: 'USDT'
   },
 
-  // BSC 主网
+  // BSC 主网（备用方案）
   'bsc-mainnet': {
     name: 'BSC Mainnet',
     chainId: 56,
@@ -78,13 +87,15 @@ const networks = {
     explorer: 'https://bscscan.com',
     tokens: {
       USDT: {
-        address: '0x55d398326f99059fF775485246999027B3197955', // BSC主网USDT
-        decimals: 18, // BSC上的USDT是18位小数
+        // ✅ BSC 主网官方 USDT 地址（已验证）
+        address: '0x55d398326f99059fF775485246999027B3197955',
+        decimals: 18, // ⚠️ 注意：BSC 上的 USDT 也是 18 位小数！
         symbol: 'USDT',
         name: 'Tether USD'
       }
     },
-    factory: process.env.BSC_MAINNET_FACTORY || '0x...', // 生产环境需要部署
+    // 🔴 TODO: 主网上线前必须修改！
+    factory: process.env.BSC_MAINNET_FACTORY || '0x...', // 需要部署后填写
     defaultToken: 'USDT'
   }
 };
