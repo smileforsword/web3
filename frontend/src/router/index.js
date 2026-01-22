@@ -3,6 +3,7 @@ import Home from '../views/Home.vue';
 import CreateRoom from '../views/CreateRoom.vue';
 import RoomDetail from '../views/RoomDetail.vue';
 import RoomsList from '../views/RoomsList.vue';
+import TestFlow from '../views/TestFlow.vue';
 
 const routes = [
   {
@@ -24,6 +25,11 @@ const routes = [
     path: '/rooms',
     name: 'RoomsList',
     component: RoomsList
+  },
+  {
+    path: '/test-flow',
+    name: 'TestFlow',
+    component: TestFlow
   }
 ];
 

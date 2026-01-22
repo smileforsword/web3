@@ -30,7 +30,8 @@
       "Bash(chmod:*)",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nUpdate documentation: BSC Testnet → opBNB Testnet\n\n- Updated network from BSC Testnet \\(97\\) to opBNB Testnet \\(5611\\)\n- Updated Factory address: 0x2c4d36e6fEBC8a8F2b546fa6080f10117af44861\n- Updated Token \\(BLD8\\) address: 0x9Aaf5A530835dE34698495BB01950AC7ce780E2c\n- Updated RPC endpoints and explorer URLs\n- Added opBNB Layer 2 context and benefits\n\nFiles updated:\n- CLAUDE.md: Project overview and EIP-712 configuration\n- README.md: Integration guide with new addresses\n- PROJECT_README.md: Quick start documentation\n- backend/.env.example: Environment variable template\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nDowngrade dependencies for Node.js 16.20 compatibility\n\nSupport deployment on CentOS 7.9 with Node.js 16.20\n\nChanges:\n- backend: Express 5.2.1 → 4.18.2, ethers 6.16.0 → 6.9.2\n- frontend: Vite 5.4.21 → 4.5.2, Vue 3.5.26 → 3.3.11\n- contracts: Hardhat 3.1.3 → 2.19.5\n- Added engines field to all package.json \\(node >=16.20.0\\)\n- Created comprehensive deployment guide for CentOS 7.9\n\nNew files:\n- DEPLOY_CENTOS7_NODE16.md: Complete deployment guide with\n  * Node.js 16 installation steps\n  * PM2 process management setup\n  * Security checklist\n  * Monitoring and maintenance scripts\n  * Troubleshooting guide\n\nTested compatible with:\n- CentOS 7.9.2009 x86_64\n- glibc 2.17 \\(CentOS 7 default\\)\n- Node.js 16.20.x LTS\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git reset:*)"
     ]
   }
 }

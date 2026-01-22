@@ -4,9 +4,7 @@ const dotenv = require('dotenv');
 const SignatureService = require('./services/signatureService');
 const EventListener = require('./services/eventListener');
 const { provider } = require('./config/blockchain');
-const signRouter = require('./routes/signRouter');
-const roomsRouter = require('./routes/roomsRouter');
-const payoutRouter = require('./routes/payoutRouter');
+const testFlowApi = require('./routes/testFlowApi');
 
 // Load environment variables
 dotenv.config();
@@ -26,9 +24,7 @@ const signatureService = new SignatureService(
 app.locals.signatureService = signatureService;
 
 // Routes
-app.use('/api', signRouter);
-app.use('/api', roomsRouter);
-app.use('/api', payoutRouter);
+app.use('/api', testFlowApi);
 
 // Health check
 app.get('/health', (req, res) => {

@@ -1,349 +1,237 @@
-# blood8 集成资料包（opBNB Testnet）— 面向无 Web3 经验团队
+# Blood8 Web3 Betting Room System
 
-> 前端与后端外包团队的一次性对接文档：包含网络/地址、最小 ABI、端到端流程、EIP-712 签名规范、术语解释、常见错误与安全清单。
-> 所有示例默认使用 **ethers v6**。
+完整的 Web3 下注房间系统，基于 opBNB Testnet，使用 EIP-712 签名验证。
 
----
+## 项目结构
 
-## 0）基础信息（必须）
-
-* **网络**：opBNB Testnet（`chainId = 5611`）
-* **工厂合约地址**：`0x2c4d36e6fEBC8a8F2b546fa6080f10117af44861`
-* **ERC20 代币地址（BLD8）**：`0x9Aaf5A530835dE34698495BB01950AC7ce780E2c`
-* **授权签名者（后端持有私钥，用于 EIP-712）**：`<后端签名者地址>`
-  说明：房间创建时把该地址写入房间合约；**签名私钥只保存在后端**（.env 或密钥管理服务），前端绝不接触。
-
----
-
-## 1）名词速查（给非 Web3 团队的简明解释）
-
-* **区块链 / opBNB**：去中心化的计算网络，可执行智能合约。opBNB 是 BNB Chain 的 Layer 2 解决方案，完全兼容以太坊，gas费更低。
-* **Testnet / Mainnet**：测试网（无真实价值，用测试币）；主网（真实价值）。
-* **RPC / Provider**：应用连接区块链的"网关"。RPC 是接口地址；Provider 是代码里封装的连接对象（HTTP/WSS）。
-* **钱包 / EOA**：由私钥控制的账户地址（0x…），可发交易与签名。
-* **私钥**：控制钱包的"根钥匙"，丢失或泄露无法挽回。后端的签名私钥仅存服务器。
-* **合约 / ABI**：合约是部署在链上的程序；ABI 是函数/事件的"说明书"（JSON），前端/后端用它与合约交互。
-* **Gas / tBNB**：上链交易费用（gas），在 opBNB 测试网用 tBNB 支付。
-* **ERC20 / approve / allowance / transferFrom**：
-  标准代币协议。用户先 `approve(房间地址, 金额)` 授权额度；合约内部通过 `transferFrom(user→room)` 扣款。
-* **事件（Event/Log）**：合约发出的链上日志，用于后端监听与前端展示。
-* **EIP-712**：一种“结构化消息”签名标准。后端按固定结构签名，合约链上可验证，防止伪造与重放。
-* **v / r / s**：椭圆曲线签名的三个组成；合约用 `ecrecover` 据此还原签名者。
-* **nonce（房间内）**：房间合约对每个 `user` 维护的计数器，签名时带上，防重放。与钱包的交易 nonce 概念不同。
-* **deadline**：签名过期时间（Unix 秒）。到期无效，降低被滥用风险。
-* **ended**：房间已终结（作废），不可再操作。
-
----
-
-## 2）端到端流程（分工）
-
-### A. 创建房间（前端）
-
-1. 连接钱包（opBNB Testnet，chainId: 5611）。
-2. 调用工厂合约 `createRoom(token, authorizedSigner, creator)`：
-
-   * `token` = 上述 ERC20 地址
-   * `authorizedSigner` = `<后端签名者地址>`
-   * `creator` = 当前用户地址（或你们想记录的发起者）
-3. 从交易回执解析 `RoomCreated` 事件，得到 `roomAddress`。
-4. 页面跳转到下注页，携带 `room=roomAddress`。
-
-### B. 下注（前端 + 后端签名）
-
-1. 前端先执行 `erc20.approve(roomAddress, amount)`。
-2. 前端向后端请求一次性 **EIP-712 签名**（方法 `pay`）：
-
-   * 后端读取 `nonce = room.nonces(user)`
-   * 构造 `domain/types/value`（下文第 4 节）
-   * 生成签名并返回 `{ v, r, s, deadline }`
-3. 前端调用 `room.pay(user, amount, deadline, v, r, s)` 上链。
-
-### C. 出款/结算（建议由后端触发）
-
-1. 后端根据业务规则计算 `to, amount, finalizeAfter`。
-2. 后端读取 `nonce = room.nonces(user)`，生成 **EIP-712** 签名（方法 `payout`）。
-3. 后端自行上链调用 `room.payout(...)`（或前端拿签名代调用）。
-4. 若 `finalizeAfter = true`，交易成功后房间 `ended = true`（作废）。
-
-### D. 事件与数据（后端）
-
-* 监听工厂 `RoomCreated` 与房间 `Paid / Payout / Finalized` 事件；落库。
-* 对前端提供只读 API（如 `/api/rooms`、`/api/rooms/:addr`、`/api/rooms/:addr/bets`）。
-
----
-
-## 3）最小 ABI（给前端/后端）
-
-### Factory ABI
-
-```json
-[
-  {
-    "inputs":[
-      {"internalType":"address","name":"erc20Token","type":"address"},
-      {"internalType":"address","name":"authorizedSigner","type":"address"},
-      {"internalType":"address","name":"creator","type":"address"}
-    ],
-    "name":"createRoom",
-    "outputs":[{"internalType":"address","name":"room","type":"address"}],
-    "stateMutability":"nonpayable",
-    "type":"function"
-  },
-  {
-    "anonymous":false,
-    "inputs":[
-      {"indexed":true,"internalType":"address","name":"room","type":"address"},
-      {"indexed":true,"internalType":"address","name":"creator","type":"address"},
-      {"indexed":false,"internalType":"address","name":"token","type":"address"},
-      {"indexed":false,"internalType":"address","name":"signer","type":"address"}
-    ],
-    "name":"RoomCreated",
-    "type":"event"
-  }
-]
+```
+web3/
+├── contracts/      # Solidity 智能合约 (Hardhat)
+├── backend/        # Express API 服务器 (EIP-712 签名服务)
+└── frontend/       # Vue 3 前端应用
 ```
 
-### Room ABI（MinimalRoom）
+## 快速开始
 
-```json
-[
-  {
-    "inputs":[
-      {"internalType":"address","name":"user","type":"address"},
-      {"internalType":"uint256","name":"amount","type":"uint256"},
-      {"internalType":"uint256","name":"deadline","type":"uint256"},
-      {"internalType":"uint8","name":"v","type":"uint8"},
-      {"internalType":"bytes32","name":"r","type":"bytes32"},
-      {"internalType":"bytes32","name":"s","type":"bytes32"}
-    ],
-    "name":"pay",
-    "outputs":[],
-    "stateMutability":"nonpayable",
-    "type":"function"
-  },
-  {
-    "inputs":[
-      {"internalType":"address","name":"to","type":"address"},
-      {"internalType":"uint256","name":"amount","type":"uint256"},
-      {"internalType":"bool","name":"finalizeAfter","type":"bool"},
-      {"internalType":"address","name":"user","type":"address"},
-      {"internalType":"uint256","name":"deadline","type":"uint256"},
-      {"internalType":"uint8","name":"v","type":"uint8"},
-      {"internalType":"bytes32","name":"r","type":"bytes32"},
-      {"internalType":"bytes32","name":"s","type":"bytes32"}
-    ],
-    "name":"payout",
-    "outputs":[],
-    "stateMutability":"nonpayable",
-    "type":"function"
-  },
-  {
-    "inputs":[
-      {"internalType":"address","name":"user","type":"address"},
-      {"internalType":"uint256","name":"deadline","type":"uint256"},
-      {"internalType":"uint8","name":"v","type":"uint8"},
-      {"internalType":"bytes32","name":"r","type":"bytes32"},
-      {"internalType":"bytes32","name":"s","type":"bytes32"}
-    ],
-    "name":"finalize",
-    "outputs":[],
-    "stateMutability":"nonpayable",
-    "type":"function"
-  },
-  {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"nonces","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-  {"inputs":[],"name":"ended","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
-  {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"Paid","type":"event"},
-  {"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"bool","name":"finalized","type":"bool"}],"name":"Payout","type":"event"},
-  {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"by","type":"address"}],"name":"Finalized","type":"event"}
-]
+### 1. 部署智能合约
+
+```bash
+cd contracts
+
+# 安装依赖
+npm install
+
+# 配置环境变量
+cp .env.example .env
+# 编辑 .env 并设置 DEPLOYER_PRIVATE_KEY
+
+# 编译合约
+npx hardhat compile
+
+# 部署到 BSC Testnet
+npx hardhat run scripts/deploy.js --network bscTestnet
 ```
 
----
+部署完成后，合约地址和 ABI 将自动导出到 `frontend/src/contracts/`。
 
-## 4）后端 EIP-712 签名规范
+### 2. 设置后端服务器
 
-**domain（域）**
+```bash
+cd backend
 
-```ts
-const domain = {
+# 安装依赖
+npm install
+
+# 配置环境变量
+cp .env.example .env
+# 编辑 .env 并设置以下关键变量：
+# - WEB_AUTH_PRIVATE_KEY: 后端签名私钥（必须）
+# - DATABASE_URL: PostgreSQL 连接字符串
+# - FACTORY_ADDRESS: 工厂合约地址（从部署脚本获取）
+# - TOKEN_ADDRESS: ERC20 代币地址（从部署脚本获取）
+
+# 创建数据库
+createdb blood8
+
+# 运行数据库迁移
+psql -d blood8 -f migrations/001_initial_schema.sql
+
+# 启动服务器
+npm start
+```
+
+服务器将在 `http://localhost:3000` 运行。
+
+### 3. 启动前端应用
+
+```bash
+cd frontend
+
+# 安装依赖
+npm install
+
+# 启动开发服务器
+npm run dev
+```
+
+前端应用将在 `http://localhost:5173` 运行。
+
+## 核心功能流程
+
+### 创建房间
+1. 连接 MetaMask 钱包到 BSC Testnet
+2. 点击 "Create Room" 按钮
+3. 确认交易，部署新的房间合约
+4. 获取房间地址
+
+### 下注 (Place Bet)
+1. 访问房间详情页
+2. 输入下注金额
+3. 系统自动执行：
+   - 授权 ERC20 代币（如需要）
+   - 向后端请求 EIP-712 签名
+   - 提交下注交易
+4. 交易确认后，下注记录显示在列表中
+
+### 结算 (Payout)
+由后端触发（需要管理员权限），已在前端 UI 中实现。
+
+## 技术架构
+
+### 智能合约（Solidity）
+- **Factory.sol**: 工厂合约，用于创建新的房间
+- **MinimalRoom.sol**: 房间合约，实现：
+  - EIP-712 签名验证
+  - 每用户 nonce 防重放攻击
+  - 三个受保护方法：`pay`, `payout`, `finalize`
+  - `ended` 标志控制房间状态
+
+### 后端（Node.js/Express）
+- **EIP-712 签名服务**: 使用后端私钥生成签名
+- **API 端点**:
+  - `POST /api/sign` - 生成签名
+  - `GET /api/rooms` - 获取所有房间
+  - `GET /api/rooms/:address` - 获取房间详情
+  - `GET /api/rooms/:address/bets` - 获取下注记录
+- **事件监听器**: 监听区块链事件并存入数据库（可选）
+- **PostgreSQL 数据库**: 存储房间、下注、支付记录
+
+### 前端（Vue 3）
+- **钱包连接**: MetaMask 集成，自动切换到 BSC Testnet
+- **合约交互**: 使用 ethers.js v6
+- **Composables**:
+  - `useWallet.js` - 钱包状态管理
+  - `useContract.js` - 合约交互逻辑
+- **视图组件**:
+  - Home - 首页
+  - CreateRoom - 创建房间
+  - RoomDetail - 房间详情和下注界面
+  - RoomsList - 所有房间列表
+
+## EIP-712 签名规范
+
+### Domain
+```javascript
+{
   name: "blood8-room",
   version: "1",
-  chainId: 5611,  // opBNB Testnet                 // BSC Testnet
+  chainId: 97,  // BSC Testnet
   verifyingContract: roomAddress
-};
-```
-
-**types（类型）**
-
-```ts
-const types = {
-  WebCall: [
-    { name: "user",        type: "address" },
-    { name: "methodHash",  type: "bytes32" },
-    { name: "payloadHash", type: "bytes32" },
-    { name: "nonce",       type: "uint256" },
-    { name: "deadline",    type: "uint256" }
-  ]
-};
-```
-
-**methodHash（字符串原文做 keccak256，必须一字不差）**
-
-* `pay(address,uint256,uint256)`
-* `payout(address,uint256,bool,address,uint256)`
-* `finalize(address,uint256)`
-
-（ethers v6 计算：`ethers.id("pay(address,uint256,uint256)")`）
-
-**payloadHash（字段顺序必须一致）**
-
-* pay：`abi.encode(user, amount, roomAddress)`
-* payout：`abi.encode(to, amount, finalizeAfter, roomAddress, deadline)`
-* finalize：`abi.encode(roomAddress, deadline)`
-
-**nonce & deadline**
-
-* `nonce = room.nonces(user)`（上链读取，每次递增，防重放）
-* `deadline = now + 180 秒`（建议短时效）
-
-**后端签名（ethers v6 示例）**
-
-```ts
-import { ethers } from "ethers";
-const signer = new ethers.Wallet(process.env.WEB_AUTH_PRIVATE_KEY, provider);
-
-const signature = await signer.signTypedData(domain, types, {
-  user, methodHash, payloadHash, nonce, deadline
-});
-// 前端拿到 signature 后拆成 v,r,s
-```
-
-**前端拆签名为 v/r/s（ethers v6）**
-
-```ts
-const bytes = ethers.getBytes(signature);
-const r = ethers.hexlify(bytes.slice(0, 32));
-const s = ethers.hexlify(bytes.slice(32, 64));
-const v = bytes[64] < 27 ? bytes[64] + 27 : bytes[64];
-```
-
----
-
-## 5）前端最小流程（伪代码 / ethers v6）
-
-### A. 创建房间
-
-```ts
-const factory = new ethers.Contract(FACTORY_ADDR, FactoryABI, signer);
-const tx = await factory.createRoom(TOKEN_ADDR, AUTH_SIGNER_ADDR, await signer.getAddress());
-const rc = await tx.wait();
-const iface = new ethers.Interface(FactoryABI);
-let roomAddress;
-for (const log of rc.logs) {
-  try {
-    const e = iface.parseLog(log);
-    if (e.name === "RoomCreated") roomAddress = e.args.room;
-  } catch {}
 }
 ```
 
-### B. 下注（approve + pay）
-
-```ts
-// 1) 授权
-const erc20 = new ethers.Contract(TOKEN_ADDR, ERC20_ABI, signer);
-await (await erc20.approve(roomAddress, amount)).wait();
-
-// 2) 向后端请求 pay 的 EIP-712 签名
-const room = new ethers.Contract(roomAddress, RoomABI, signer);
-const nonce = await room.nonces(user);
-const deadline = Math.floor(Date.now()/1000) + 180;
-const methodHash  = ethers.id("pay(address,uint256,uint256)");
-const payloadHash = ethers.keccak256(ethers.AbiCoder.defaultAbiCoder()
-                     .encode(["address","uint256","address"], [user, amount, roomAddress]));
-const { v, r, s } = await fetch("/api/sign", {
-  method: "POST",
-  headers: { "content-type": "application/json" },
-  body: JSON.stringify({ roomAddress, user, method: "pay", methodHash, payloadHash, nonce: nonce.toString(), deadline })
-}).then(r => r.json());
-
-// 3) 上链调用
-await (await room.pay(user, amount, deadline, v, r, s)).wait();
-```
-
----
-
-## 6）后端签名 API 约定（建议）
-
-**POST `/api/sign`**
-Request：
-
-```json
+### Types
+```javascript
 {
-  "roomAddress": "0xRoom",
-  "user": "0xUser",
-  "method": "pay|payout|finalize",
-  "methodHash": "0x...",
-  "payloadHash": "0x...",
-  "nonce": "123",
-  "deadline": 1732522333
+  WebCall: [
+    { name: "user", type: "address" },
+    { name: "methodHash", type: "bytes32" },
+    { name: "payloadHash", type: "bytes32" },
+    { name: "nonce", type: "uint256" },
+    { name: "deadline", type: "uint256" }
+  ]
 }
 ```
 
-Response：
+### Method Signatures
+- `pay`: `"pay(address,uint256,uint256)"`
+- `payout`: `"payout(address,uint256,bool,address,uint256)"`
+- `finalize`: `"finalize(address,uint256)"`
 
-```json
-{ "v": 28, "r": "0x...", "s": "0x...", "nonce": "123", "deadline": 1732522333 }
+## 环境变量
+
+### Backend .env
+```env
+WEB_AUTH_PRIVATE_KEY=0x...        # 后端签名私钥（关键）
+BSC_TESTNET_RPC=https://...       # BSC Testnet RPC
+FACTORY_ADDRESS=0x...             # 工厂合约地址
+TOKEN_ADDRESS=0x...               # ERC20 代币地址
+DATABASE_URL=postgresql://...     # PostgreSQL 连接
+PORT=3000                         # 服务器端口
+ENABLE_EVENT_LISTENER=false       # 是否启用事件监听
 ```
 
-后端要做的校验：
+## 安全注意事项
 
-* `roomAddress` 为已知房间、状态允许；
-* `methodHash` 与 `method` 一致；
-* `nonce` 与链上 `room.nonces(user)` 一致；
-* `deadline` 在可接受时间窗内（例如 ±60s）。
+1. **私钥管理**: `WEB_AUTH_PRIVATE_KEY` 只存储在服务器，绝不暴露给前端
+2. **签名时效**: 所有签名 180 秒后过期
+3. **Nonce 验证**: 每次签名前从链上读取最新 nonce
+4. **房间状态检查**: 前端禁止在已结束的房间下注
+5. **限流保护**: 生产环境应对 `/api/sign` 端点添加速率限制
 
----
+## 常见错误
 
-## 7）事件订阅与数据输出（后端）
+| 错误 | 原因 | 解决方案 |
+|------|------|----------|
+| `bad signer` | 后端私钥与房间授权签名者不匹配 | 检查 WEB_AUTH_PRIVATE_KEY |
+| `expired` | 签名已过期 | 重新请求签名 |
+| `ended` | 房间已结束 | 创建新房间 |
+| `nonce_mismatch` | Nonce 不匹配 | 刷新页面重试 |
+| `transfer fail` | 代币余额或授权不足 | 检查余额并重新授权 |
 
-**监听事件**
+## 测试网资源
 
-* Factory：`RoomCreated(address room,address creator,address token,address signer)`
-* Room：`Paid(address user,uint256 amount)`、`Payout(address to,uint256 amount,bool finalized)`、`Finalized(address by)`
+- **BSC Testnet 水龙头**: https://testnet.binance.org/faucet-smart
+- **BSCScan Testnet**: https://testnet.bscscan.com
+- **ChainID**: 97
+- **RPC**: https://data-seed-prebsc-1-s1.binance.org:8545/
 
-**落库字段建议**
+## 开发命令
 
-* rooms：`roomAddress, token, signer, creator, createdAt, status(open/ended)`
-* bets：`roomAddress, user, amount, txHash, blockTime`
-* payouts：`roomAddress, to, amount, finalized, txHash, blockTime`
+### 合约
+```bash
+npx hardhat compile          # 编译合约
+npx hardhat test             # 运行测试
+npx hardhat run scripts/deploy.js --network bscTestnet  # 部署
+```
 
-**只读 API（示例）**
+### 后端
+```bash
+npm start                    # 启动服务器
+npm run dev                  # 开发模式
+```
 
-* `GET /api/rooms`
-* `GET /api/rooms/:addr`
-* `GET /api/rooms/:addr/bets`
+### 前端
+```bash
+npm run dev                  # 启动开发服务器
+npm run build                # 构建生产版本
+npm run preview              # 预览生产构建
+```
 
----
+## 项目状态
 
-## 8）常见错误与排查
+✅ 智能合约实现和部署脚本
+✅ 后端 EIP-712 签名服务
+✅ 后端 API 端点
+✅ 数据库架构
+✅ 前端钱包连接
+✅ 房间创建界面
+✅ 下注界面
+✅ 房间列表
+⏳ 事件监听器（可选）
+⏳ 管理员支付界面
+⏳ 测试套件
 
-* `bad signer`：签名不是房间记录的 `authorizedSigner` 生成。核对后端私钥与创建房间时传入的公钥。
-* `expired`：`deadline` 过期。重新向后端申请签名。
-* `ended`：房间已经作废。需新建房间。
-* `transferFrom fail / transfer fail`：代币余额或授权不足，或目标代币实现不标准。
-* `reenter`：重入保护触发。避免多次并发点击提交。
-* 交易层面的 `insufficient funds`：账户 tBNB 不足以支付 gas。
+## 许可证
 
----
-
-## 9）安全清单（必须遵守）
-
-* 后端签名私钥只在服务器，绝不下发到前端或日志中。
-* 签名短时效（2–3 分钟），并与 `user/roomAddress/methodHash/nonce/deadline` 强绑定。
-* 重要写操作（尤其出款）建议只允许后端触发（或必须有后端签名）。
-* 给 `/api/sign` 做限流与鉴权；记录请求与签名用途，便于审计。
-* 前端在房间 `ended()` 为 `true` 时禁用交互。
-* 全程 HTTPS，输入参数严格校验与编码。
-
-
+ISC
